@@ -178,7 +178,7 @@ void setup() {
   pinMode(PIN_LED_B, OUTPUT);
   pinMode(PIN_LED_G, OUTPUT);
   pinMode(PIN_LED_R, OUTPUT);
-  pinMode(PIN_RESET_IN, INPUT);
+  pinMode(PIN_RESET_IN, INPUT_PULLUP);
   pinMode(PIN_RESET_OUT, OUTPUT);
   pinMode(PIN_LANG, OUTPUT);
   pinMode(PIN_SPEED, OUTPUT);

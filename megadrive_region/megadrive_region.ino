@@ -2,9 +2,9 @@
  *  
  * The Sega MegaDrive motherboards are generally the same for all regions.  Refresh Rate (50hz/60hz or PAL/NTSC) and language (Japanese/Export) are controlled by 4 jumpers.
  * There are quite a few articles/project available that describe how to modify a MegaDrive to allow changing these properties at will, either by adding physical switches to
- * the case or switchless by using a microcontroller/arduino.
+ * the case or switchless by using a microcontroller/Arduino.
  * 
- * This Arduino sketch is nothing special. There are more advanced implementations available. I just wanted to write my own version because I never worked with an Ardiono before
+ * This Arduino sketch is nothing special. There are more advanced implementations available. I just wanted to write my own version because I never worked with an Arduino before
  * and though it would be a nice starter experiment. Tested on an Arduino Nano (and clones).
  *  
  * Copyright (c) 2019 - Johan Smet - Licensed under the BSD-3-CLAUSE license (reproduced below)
@@ -21,9 +21,9 @@
  */
 
 /* Installation :
- * (NOTE: Only tested with a "IC BD MD5 PAL" board but should work with other revision. Jumpers might be located somewhere else. Earlier revision use aactive high reset line!)
+ * (NOTE: Only tested with an "IC BD MD5 PAL" board but should work with other revisions. Jumpers might be located somewhere else. Earlier revision use active-high reset line!)
  * 
- *  JP1-4 are on the right side of the board and will be connected differently according to the original region of the megadrive.
+ *  JP1-4 are on the right side of the board and will be connected differently according to the original region of the Megadrive.
  *       European                     American                   Japanse
  *     50Hz / English             60 Hz / English            60 Hz / Japanese
  *    
@@ -37,7 +37,7 @@
  *  
  *  Cut the traces between the jumpers and connect D5 of the Arduino to (A) and D6 to (B).
  *  
- *  To intercept the reset switch: on the bottom of the pcb cut the trace between C80 and the reset button.
+ *  To intercept the reset switch: on the bottom of the PCB cut the trace between C80 and the reset button.
  *  Connect D12 to the reset button and D11 to C80.
  *  
  *  Optional: attach an RGB LED (common cathode) to D2/D3/D4 and GND to display the current region of your MegaDrive.

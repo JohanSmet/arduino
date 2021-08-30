@@ -67,6 +67,10 @@ const int PIN_6502_DB1 = 52;
 const int PIN_6502_DB0 = 53;
 
 const int PIN_CONTINUE = 2;
+const int PIN_CHECKPOINT = A7;
+const int PIN_TEST_RAM = A6;
+const int PIN_TEST_ROM = A5;
+const int PIN_TEST_DISPLAY = A4;
 
 const int RW_READ = HIGH;
 const int RW_WRITE = LOW;
@@ -441,9 +445,6 @@ const byte DISPLAY_DATA[] = {
 const int ADDRESS_MIN = 0x2000;
 const int ADDRESS_MAX = 0x20ff;
 
-/* define CHECKPOINT_ENABLE to halt the 'cpu' after each operation, bring PIN_CONTINUE low to continue */
-// #define CHECKPOINT_ENABLE	1
-
 /* global data */
 bool g_clock = LOW;
 bool g_sync  = LOW;
@@ -451,6 +452,11 @@ bool g_rw    = RW_READ;
 
 uint8_t  g_data_bus = 0;
 uint16_t g_address_bus = 0;
+
+bool g_checkpoint_enable = false;
+bool g_test_ram = false;
+bool g_test_rom = false;
+bool g_test_display = false;
 
 volatile byte g_continue = false;
 
@@ -537,15 +543,15 @@ uint8_t read_databus() {
 }
 
 void checkpoint(const char *message) {
-#ifdef CHECKPOINT_ENABLE
-	Serial1.print("Checkpoint ");
-	Serial1.println(message);
-
-	while (!g_continue)
-		delay(10);
-
-	g_continue = false;
-#endif
+  if (g_checkpoint_enable) {
+  	Serial1.print("Checkpoint ");
+  	Serial1.println(message);
+  
+  	while (!g_continue)
+  		delay(10);
+  
+  	g_continue = false;
+  }
 }
 
 void write_byte(uint16_t address, uint8_t data) {
@@ -610,6 +616,13 @@ void continue_isr() {
 		g_continue = true;
 		last_isr_time = time;
 	}
+}
+
+void read_dip_switches() {
+  g_checkpoint_enable = digitalRead(PIN_CHECKPOINT) == LOW;
+  g_test_ram          = digitalRead(PIN_TEST_RAM) == LOW;
+  g_test_rom          = digitalRead(PIN_TEST_ROM) == LOW;
+  g_test_display      = digitalRead(PIN_TEST_DISPLAY) == LOW;
 }
 
 uint16_t proc_address = ADDRESS_MIN;
@@ -684,7 +697,7 @@ void process_display() {
 /* device setup */
 void setup() {
 	/* enable serial I/O with host computer */
-	Serial1.begin(9600);
+  Serial1.begin(9600);
 
 	/* pin mode - control signals */
 	pinMode(PIN_6502_RDY, INPUT);		// IN - enable/disable cpu
@@ -707,16 +720,26 @@ void setup() {
 	/* use builtin-led to visualize clock phase 2 */
 	pinMode(LED_BUILTIN, OUTPUT);
 
+  /* dip-switches */
+  pinMode(PIN_CHECKPOINT, INPUT_PULLUP);
+  pinMode(PIN_TEST_RAM, INPUT_PULLUP);
+  pinMode(PIN_TEST_ROM, INPUT_PULLUP);
+  pinMode(PIN_TEST_DISPLAY, INPUT_PULLUP);
+
 	/* push-button to continue from checkpoints */
 	pinMode(PIN_CONTINUE, INPUT_PULLUP);
-
 	attachInterrupt(digitalPinToInterrupt(PIN_CONTINUE), continue_isr, FALLING);
 
+  /* settings and test selection */
+  read_dip_switches();
+  Serial1.println(g_checkpoint_enable ? "Checkpoints  = enabled" : "Checkpoints  = disabled");
+  Serial1.println(g_test_ram ?          "RAM test     = enabled" : "RAM test     = disabled");
+  Serial1.println(g_test_rom ?          "ROM test     = enabled" : "ROM test     = disabled");
+  Serial1.println(g_test_display ?      "Display test = enabled" : "Display test = disabled");
+
 	delay(5000);
-
-	Serial1.println("setup complete");
+ 	Serial1.println("setup complete");
 }
-
 
 /* main loop */
 void loop() {
@@ -730,8 +753,14 @@ void loop() {
 		g_address_bus = 0;
 		output_signals();
 	} else {
-		// process_ram()
-		// process_rom()
-		process_display();
+    if (g_test_ram) {
+		  process_ram();
+    }
+    if (g_test_rom) {
+		  process_rom();
+    }
+    if (g_test_display) {
+		  process_display();
+    }
 	}
 }

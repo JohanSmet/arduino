@@ -611,8 +611,8 @@ void continue_isr() {
 	static unsigned long last_isr_time = 0;
 
 	unsigned long time = millis();
-		
-	if (time - last_isr_time > 500) {
+  		
+	if (time - last_isr_time > 200) {
 		g_continue = true;
 		last_isr_time = time;
 	}

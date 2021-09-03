@@ -441,8 +441,14 @@ const byte DISPLAY_DATA[] = {
   0x00, 0x00, 0x00, 0x00
 };
 
-/* test configuration: change to configure which area of memory to test */
-const int ADDRESS_MIN = 0x2000;
+/* test configuration: change to configure which area of memory to test
+	0x0000 - 0x0fff : program RAM
+	0x1000 - 0x1fff : playfield RAM
+	0x2000 - 0x20ff : color RAM
+	0x4000 - 0x7fff : paged program ROM
+	0x8000 - 0xffff : fixed program ROM
+*/
+const int ADDRESS_MIN = 0x0000;
 const int ADDRESS_MAX = 0x20ff;
 
 /* global data */

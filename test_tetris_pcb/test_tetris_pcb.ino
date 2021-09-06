@@ -1,8 +1,10 @@
-/* test_6502_memory - use an Arduino as a "replacement" for a 6502 processor in order to test access to system memory
+/* test_tetris_pcb - use an Arduino as a "replacement" for a 6502 processor in order to test
+ * system memory and peripherals.
  *
  * Developped to help me repair a Tetris bootleg arcade board that was being difficult.
  *   - ignores the input clock and drives phi2 - phi1 was not used on the arcade board
  *	 - writes / reads memory and stops when error to allow easy tracing with a logic probe
+ *	 - read state of the buffers for system/player input
  *
  * Copyright (c) 2019 - Johan Smet - Licensed under the BSD-3-CLAUSE license (reproduced below)
 
@@ -28,7 +30,6 @@
  * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 
 /* pin definitions */
 const int PIN_6502_RDY = 22;

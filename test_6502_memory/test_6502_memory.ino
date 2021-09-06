@@ -67,10 +67,10 @@ const int PIN_6502_DB1 = 52;
 const int PIN_6502_DB0 = 53;
 
 const int PIN_CONTINUE = 2;
-const int PIN_CHECKPOINT = A7;
-const int PIN_TEST_RAM = A6;
-const int PIN_TEST_ROM = A5;
-const int PIN_TEST_DISPLAY = A4;
+const int PIN_CHECKPOINT = A4;
+const int PIN_TEST_P0 = A5;
+const int PIN_TEST_P1 = A6;
+const int PIN_TEST_P2 = A7;
 
 const int RW_READ = HIGH;
 const int RW_WRITE = LOW;
@@ -451,6 +451,19 @@ const byte DISPLAY_DATA[] = {
 const int ADDRESS_MIN = 0x0000;
 const int ADDRESS_MAX = 0x20ff;
 
+/* test enumeration */
+const int TEST_RAM		= 0b000;
+const int TEST_ROM		= 0b001;
+const int TEST_DISPLAY	= 0b010;
+const int TEST_INPUT 	= 0b011;
+
+const char *TEST_NAMES[] = {
+	"RAM test",
+	"ROM test",
+	"Display test",
+	"Input test"
+};
+
 /* global data */
 bool g_clock = LOW;
 bool g_sync  = LOW;
@@ -460,13 +473,20 @@ uint8_t  g_data_bus = 0;
 uint16_t g_address_bus = 0;
 
 bool g_checkpoint_enable = false;
-bool g_test_ram = false;
-bool g_test_rom = false;
-bool g_test_display = false;
+int  g_selected_test = 0;
 
 volatile byte g_continue = false;
 
 /* utility functions */
+
+const char *selected_test_name() {
+	if (g_selected_test < (sizeof(TEST_NAMES) / sizeof(TEST_NAMES[0]))) {
+		return TEST_NAMES[g_selected_test];
+	} else {
+		return "Undefined";
+	}
+}
+
 void data_mode_input() {
 	pinMode(PIN_6502_DB0, INPUT);
 	pinMode(PIN_6502_DB1, INPUT);
@@ -626,9 +646,10 @@ void continue_isr() {
 
 void read_dip_switches() {
   g_checkpoint_enable = digitalRead(PIN_CHECKPOINT) == LOW;
-  g_test_ram          = digitalRead(PIN_TEST_RAM) == LOW;
-  g_test_rom          = digitalRead(PIN_TEST_ROM) == LOW;
-  g_test_display      = digitalRead(PIN_TEST_DISPLAY) == LOW;
+
+  g_selected_test	  = (!digitalRead(PIN_TEST_P0) << 0) |
+						(!digitalRead(PIN_TEST_P1) << 1) |
+						(!digitalRead(PIN_TEST_P2) << 2);
 }
 
 uint16_t proc_address = ADDRESS_MIN;
@@ -690,6 +711,7 @@ void process_rom() {
 
 /* test routine that tries to output something to the display of the tetris bootleg board */
 void process_display() {
+
 	/* pallette */
 	for (int i = 0; i < sizeof(PALLETE_DATA); ++i) {
 		write_byte(0x2000 + i, PALLETE_DATA[i]);
@@ -700,10 +722,37 @@ void process_display() {
 	}
 }
 
+void process_input() {
+
+	char buffer[128];
+
+	byte system_inputs = read_byte(0x2808);
+	sprintf(buffer, "System inputs (0x%.2x) : selftest = %d, vblank = %d, coin2 = %d, coin1 = %d",
+			system_inputs,
+			bitRead(system_inputs, 7),
+			bitRead(system_inputs, 6),
+			bitRead(system_inputs, 1),
+			bitRead(system_inputs, 0)
+	);
+	Serial1.println(buffer);
+
+	byte player_inputs = read_byte(0x2818);
+	sprintf(buffer, "Player inputs (0x%.2x) : P2 [ls:%d, r:%d, d:%d, rotate:%d] P1 [ls:%d, r:%d, d:%d, rotate:%d]",
+			player_inputs,
+			bitRead(player_inputs, 7), bitRead(player_inputs, 6),
+			bitRead(player_inputs, 5), bitRead(player_inputs, 4),
+			bitRead(player_inputs, 3), bitRead(player_inputs, 2),
+			bitRead(player_inputs, 1), bitRead(player_inputs, 0)
+	);
+	Serial1.println(buffer);
+
+	delay(1000);
+}
+
 /* device setup */
 void setup() {
 	/* enable serial I/O with host computer */
-  Serial1.begin(9600);
+	Serial1.begin(9600);
 
 	/* pin mode - control signals */
 	pinMode(PIN_6502_RDY, INPUT);		// IN - enable/disable cpu
@@ -726,22 +775,23 @@ void setup() {
 	/* use builtin-led to visualize clock phase 2 */
 	pinMode(LED_BUILTIN, OUTPUT);
 
-  /* dip-switches */
-  pinMode(PIN_CHECKPOINT, INPUT_PULLUP);
-  pinMode(PIN_TEST_RAM, INPUT_PULLUP);
-  pinMode(PIN_TEST_ROM, INPUT_PULLUP);
-  pinMode(PIN_TEST_DISPLAY, INPUT_PULLUP);
+	/* dip-switches */
+	pinMode(PIN_CHECKPOINT, INPUT_PULLUP);
+	pinMode(PIN_TEST_P0, INPUT_PULLUP);
+	pinMode(PIN_TEST_P1, INPUT_PULLUP);
+	pinMode(PIN_TEST_P2, INPUT_PULLUP);
 
 	/* push-button to continue from checkpoints */
 	pinMode(PIN_CONTINUE, INPUT_PULLUP);
 	attachInterrupt(digitalPinToInterrupt(PIN_CONTINUE), continue_isr, FALLING);
 
-  /* settings and test selection */
-  read_dip_switches();
-  Serial1.println(g_checkpoint_enable ? "Checkpoints  = enabled" : "Checkpoints  = disabled");
-  Serial1.println(g_test_ram ?          "RAM test     = enabled" : "RAM test     = disabled");
-  Serial1.println(g_test_rom ?          "ROM test     = enabled" : "ROM test     = disabled");
-  Serial1.println(g_test_display ?      "Display test = enabled" : "Display test = disabled");
+	/* settings and test selection */
+	read_dip_switches();
+	Serial1.println(g_checkpoint_enable ? "Checkpoints  = enabled" : "Checkpoints  = disabled");
+	Serial1.print("Requested test = 0b");
+	Serial1.print(g_selected_test, BIN);
+	Serial1.print(" - ");
+	Serial1.println(selected_test_name());
 
 	delay(5000);
  	Serial1.println("setup complete");
@@ -759,14 +809,19 @@ void loop() {
 		g_address_bus = 0;
 		output_signals();
 	} else {
-    if (g_test_ram) {
-		  process_ram();
-    }
-    if (g_test_rom) {
-		  process_rom();
-    }
-    if (g_test_display) {
-		  process_display();
-    }
+		switch (g_selected_test) {
+			case TEST_RAM:
+				process_ram();
+				break;
+			case TEST_ROM:
+				process_rom();
+				break;
+			case TEST_DISPLAY:
+				process_display();
+				break;
+			case TEST_INPUT:
+				process_input();
+				break;
+		}
 	}
 }

@@ -58,8 +58,15 @@ const char *NES_BTN_NAMES[NES_BTN_COUNT] = {
 	"A"
 };
 
+// global variables
+static uint16_t current_state = 0;
+
 /* helper functions */
 void print_state(uint16_t state) {
+	if (state == BTN_NONE) {
+		return;
+	}
+
 	for (uint8_t btn = 0; btn < NES_BTN_COUNT; ++btn) {
 		if (state & (1 << btn)) {
 			Serial.print(NES_BTN_NAMES[btn]);
@@ -111,7 +118,6 @@ void setup() {
 
 /* main loop */
 void loop() {
-	uint16_t current_state = 0;
 	uint16_t state = read_controller();
 
 	if (state != current_state) {

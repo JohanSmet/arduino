@@ -3,7 +3,7 @@
 FQBN ?= arduino:avr:mega
 SERIAL ?= /dev/ttyACM0
 
-BUILD_DIR 	:= $(subst :,_,$(PWD)/_build/${FQBN})
+BUILD_DIR 	:= $(subst :,_,/tmp/$(PWD)/_build/${FQBN})
 SRC 		:= $(wildcard *.ino)
 ELF 		:= ${BUILD_DIR}/${SRC}.elf
 

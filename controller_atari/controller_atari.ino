@@ -58,8 +58,8 @@ const uint8_t PIN_LEFT	= 26;
 const uint8_t PIN_RIGHT	= 28;
 const uint8_t PIN_FIRE	= 30;
 
-const uint8_t PIN_PADDLEA = 32;
-const uint8_t PIN_PADDLEB = 34;
+const uint8_t PIN_PADDLEA = 34;
+const uint8_t PIN_PADDLEB = 32;
 
 /* controller button flags */
 const uint16_t BTN_NONE    = 0;
@@ -91,8 +91,8 @@ static const uint8_t BTN_PIN_MAP[BTN_COUNT] = {
 
 // values for arduino mega 2560
 #define PADDLE_MAX_VALUE	1000
-#define PADDLE_A_SHIFT		5		// pin 32 = PC5
-#define PADDLE_B_SHIFT		3		// pin 34 = PC3
+#define PADDLE_A_SHIFT		3		// pin 34 = PC3
+#define PADDLE_B_SHIFT		5		// pin 32 = PC5
 #define PADDLE_DDR			DDRC
 #define PADDLE_PORT			PORTC
 #define PADDLE_PIN			PINC
